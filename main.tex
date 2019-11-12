@@ -1,0 +1,195 @@
+\title{AlgorithmTemplate}
+\documentclass[10pt]{article}
+\usepackage{fullpage}
+\usepackage{times}
+\usepackage{fancyhdr,graphicx,amsmath,amssymb}
+\usepackage[ruled,vlined]{algorithm2e}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\include{pythonlisting}
+
+\begin{document}
+
+% \begin{algorithm}[h]
+% \KwIn{Input}
+% \KwOut{Output}
+
+% \nl \bf Pass\;
+%     \caption{{\bf Algorithm} \label{Algorithm}}
+
+% \end{algorithm}
+
+
+\begin{algorithm}{}
+\footnotesize
+\caption{\textsc{rmalloc\_basic}{$\textsc{(P, V}, sz, h)$}}
+\label{alg:rmalloc} 
+\begin{algorithmic}[1]
+
+%------ 
+% \Procedure{$\mathbf{DeleteItem}$}{item $x$}
+
+\STATE \textbf{Input:} Channel $P$, Allocator instance $V$, allocation size $sz$, heuristic $h$
+is the algorithm that generates next allocation, 
+\STATE \textbf{Output:} A descriptor {$\textbf{d}$} if successful else \textsc{ADDR\_NULL}
+\STATE \textbf{Local:} Let $(P_{b}, V_{b})$ be secondary channel and $R_{\textsc{COUNT}}$ num retries.
+\STATE \textbf{if} $\textsc{alloc\_isRemote}($V$)$ AND $\textsc{sync}($V$) \equiv \textsc{Deferred}$ 
+\STATE \quad \textbf{do}
+\STATE \qquad $R_{COUNT} \gets R_{COUNT}-1$
+\STATE \qquad $\textbf{d} \leftarrow  \textsc{find\_next\_allocation}(V, h, sz)$ 
+\STATE \qquad \textbf{if} $\textbf{d} \equiv \textsc{ADDR\_NULL}$ \textbf{then}
+\STATE \qquad \quad $s \gets \textsc{sync\_network}(P)$
+\STATE \qquad \quad $\textsc{update}(V, s)$
+\STATE \qquad \quad \textsc{break}
+\STATE \quad \textbf{while} ($R_{COUNT} > 0$)
+
+\STATE \textbf{if} $\textsc{alloc\_isRemote}($V$)$ AND $\textsc{sync}($V$) \equiv \textsc{Immediate}$ \textbf{then}
+\STATE \quad $\textbf{s} \gets \textsc{rread}(P_{b}, sizeof(d))$ 
+\STATE \quad $\textsc{update}(V, s)$
+\STATE \quad $\textbf{d} \gets \textsc{find\_next\_allocation}(V, h, sz)$ 
+% \STATE \quad \textbf{return} {$\textbf{d}$}
+
+\STATE \textbf{else}
+\STATE \quad $\textbf{d} \gets \textsc{find\_next\_allocation}(V, h, sz)$ 
+\STATE \quad \textbf{if} $\textsc{alloc\_isLocal}($V$)$ AND $\textsc{sync}($V$) \equiv \textsc{Immediate}$ \textbf{then}
+\STATE \qquad $e \gets \textsc{rmalloc}(P_{b}, V_{b}, sizeof(d), \texttt{nextfit})$
+\STATE \qquad $*e \gets \textbf{d}$
+\STATE \qquad $\textsc{rwrite}(P_{b}, e)$ 
+\STATE \textsc{\textbf{return}} {$\textbf{d}$}
+% \EndProcedure
+% \Statex
+
+\end{algorithmic}
+\end{algorithm}
+
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+\begin{algorithm}{}
+\footnotesize
+\caption{\textsc{rmalloc\_sync}{$\textsc{(P, V}, sz, h, T)$}}
+\label{alg:rmalloc_sync} 
+\begin{algorithmic}[1]
+
+%------ 
+% \Procedure{$\mathbf{DeleteItem}$}{item $x$}
+
+\STATE \textbf{Input:} Channel $P$, Allocator instance $V$, allocation size $sz$, heuristic $h$
+is the algorithm that generates next allocation, 
+\STATE \textbf{Output:} A descriptor {$\textbf{d}$} if successful else \textsc{ADDR\_NULL}
+\STATE \textbf{Local:} Let $(P_{b}, V_{b})$ be secondary channel, $R_{\textsc{COUNT}}$ num retries, $T\in {PUT, GET}$ is a RDMA network operation type.
+\STATE \textbf{if} $\textsc{alloc\_isRemote}($V$)$ AND $\textsc{sync}($V$) \equiv \textsc{Deferred}$ 
+\STATE \quad \textbf{do}
+\STATE \qquad $R_{COUNT} \gets R_{COUNT}-1$
+\STATE \qquad $\textbf{d} \leftarrow  \textsc{find\_next\_allocation}(V, h, sz)$ 
+\STATE \qquad \textbf{if} $\textbf{d} \equiv \textsc{ADDR\_NULL}$ \textbf{then}
+\STATE \qquad \quad \textbf{if} $\textbf{h} \equiv \textsc{NEXT\_FIT}$ \textbf{then}
+\STATE \qquad \qquad $s \gets \textsc{sync\_in\_blocks}(P)$
+\STATE \qquad \quad\textbf{else} 
+\STATE \qquad \qquad $s \gets \textsc{sync\_in\_free\_tags}(P)$
+\STATE \qquad \quad $\textsc{update}(V, s)$
+\STATE \qquad \quad \textsc{break}
+\STATE \qquad \textbf{else if}  $\textbf{h} \neq \textsc{NEXT\_FIT}$ \textbf{then}
+\STATE \qquad \quad $\textsc{sync\_out\_alloc\_tags}(P)$
+\STATE \qquad \textbf{if}  $\textbf{d} \neq \textsc{ADDR\_NULL}$ \textbf{then}
+\STATE \qquad \quad \textsc{break}
+\STATE \quad \textbf{while} ($R_{COUNT} > 0$)
+
+\STATE \textbf{if} $\textsc{alloc\_isRemote}($V$)$ AND $\textsc{sync}($V$) \equiv \textsc{Immediate}$ \textbf{then}
+\STATE \quad $\textbf{s} \gets \textsc{rread}(P_{b}, sizeof(d))$ 
+\STATE \quad $\textsc{update}(V, s)$
+\STATE \quad $\textbf{d} \gets \textsc{find\_next\_allocation}(V, h, sz)$ 
+% \STATE \quad \textbf{return} {$\textbf{d}$}
+
+\STATE \textbf{else}
+\STATE \quad $\textbf{d} \gets \textsc{local\_alloc\_sync}<T>(V, h, sz)$ 
+\STATE \quad \textbf{if} $\textsc{alloc\_isLocal}($V$)$ AND $\textsc{sync}($V$) \equiv \textsc{Immediate}$ \textbf{then}
+\STATE \qquad $e \gets \textsc{rmalloc}(P_{b}, V_{b}, sizeof(d), \texttt{nextfit})$
+\STATE \qquad $*e \gets \textbf{d}$
+\STATE \qquad $\textsc{rwrite}(P_{b}, e)$ 
+\STATE \textsc{\textbf{return}} {$\textbf{d}$}
+% \EndProcedure
+% \Statex
+
+\end{algorithmic}
+\end{algorithm}
+
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+
+\begin{algorithm}{}
+\footnotesize
+\caption{\textsc{local\_alloc\_sync}{$<PUT>\textsc{(P, V}, sz, h)$}}
+\label{alg:lalloc} 
+\begin{algorithmic}[1]
+
+%------ 
+% \Procedure{$\mathbf{DeleteItem}$}{item $x$}
+
+\STATE \textbf{Input:} Channel $P$, Allocator instance $V$, allocation size $sz$, heuristic $h$
+is the algorithm that generates next allocation, 
+\STATE \textbf{Output:} A descriptor {$\textbf{d}$} if successful else \textsc{ADDR\_NULL}
+\STATE \textbf{Local:} Let $(P_{b}, V_{b})$ be secondary channel and $R_{\textsc{COUNT}}$ num retries.
+\STATE \textbf{if} $\textsc{alloc\_isLocal}($V$)$ OR $\textbf{h} \equiv \textsc{NEXT\_FIT}$  \textbf{then} 
+\STATE \quad $\textbf{d} \leftarrow  \textsc{find\_next\_allocation}(V, h, sz)$ 
+\STATE \quad $\textsc{update}(V, s)$
+\STATE \textbf{else}
+\STATE \quad \textbf{do}
+\STATE \qquad $s \gets \textsc{sync\_in\_alloc\_tags}(P)$
+\STATE \qquad $\textsc{update}(V, s)$
+\STATE \qquad $\textbf{d} \leftarrow  \textsc{find\_next\_allocation}(V, h, sz)$
+\STATE \quad \textbf{while} ($d \neq \textsc{ADDR\_NULL}$)
+\STATE \textsc{\textbf{return}} {$\textbf{d}$}
+\STATE
+
+% \EndProcedure
+% \Statex
+
+\end{algorithmic}
+\end{algorithm}
+
+
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+
+\begin{algorithm}{}
+\footnotesize
+\caption{\textsc{local\_alloc\_sync}{$<GET>\textsc{(P, V}, sz, h)$}}
+\label{alg:lalloc_get} 
+\begin{algorithmic}[1]
+
+%------ 
+% \Procedure{$\mathbf{DeleteItem}$}{item $x$}
+
+\STATE \textbf{Input:} Channel $P$, Allocator instance $V$, allocation size $sz$, heuristic $h$
+is the algorithm that generates next allocation, 
+\STATE \textbf{Output:} A descriptor {$\textbf{d}$} if successful else \textsc{ADDR\_NULL}
+\STATE \textbf{Local:} Let $(P_{b}, V_{b})$ be secondary channel and $R_{\textsc{COUNT}}$ num retries.
+\STATE \textbf{if} $\textsc{alloc\_isLocal}($V$)$ OR $\textbf{h} \equiv \textsc{NEXT\_FIT}$  \textbf{then} 
+\STATE \quad $\textbf{d} \leftarrow  \textsc{find\_next\_allocation}(V, h, sz)$ 
+\STATE \quad $\textsc{update}(V, s)$
+\STATE \textbf{else}
+\STATE \quad \textbf{do}
+\STATE \qquad $s \gets \textsc{sync\_in\_alloc\_tags}(P)$
+\STATE \qquad $\textsc{update}(V, s)$
+\STATE \qquad $\textbf{d} \leftarrow  \textsc{find\_next\_allocation}(V, h, sz)$
+\STATE \quad \textbf{while} ($d \neq \textsc{ADDR\_NULL}$)
+\STATE \textsc{\textbf{return}} {$\textbf{d}$}
+\STATE
+
+% \EndProcedure
+% \Statex
+
+\end{algorithmic}
+\end{algorithm}
+
+
+\end{document}
