@@ -311,4 +311,38 @@ is the algorithm that generates next allocation,
 \end{algorithm}
 
 
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+
+\begin{algorithm}{}
+\footnotesize
+\caption{\textsc{rwrite}{$<PUT>\textsc{(P, V}, h, d_l)$}}
+\label{alg:rread_PUT} 
+\begin{algorithmic}[1]
+
+%------ 
+% \Procedure{$\mathbf{DeleteItem}$}{item $x$}
+
+\STATE \textbf{Input:} Channel $P$, Allocator instance $V$, local allocation descriptor $d_l$,  heuristic $h$ is the algorithm that generates next allocation
+\STATE \textbf{Output:} return {$0$} if RDMA PUT was successful else {$1$}
+\STATE \textbf{Local:} Let $d_r$ be a remote allocation descriptor,  $ps$ be payload size, $V_l$ and $V_r$ be local and remote(shadow) allocator instances respectively.
+% \STATE \textbf{if} $\textsc{alloc\_isLocal}($V$)$ AND $\textsc{sync}($V$) \equiv \textsc{Deferred}$  \textbf{then} 
+\STATE \quad $\textbf{$V_l$} \leftarrow  \textsc{get\_local}(P)$ 
+\STATE \quad $\textbf{$V_r$} \leftarrow  \textsc{get\_remote}(P)$ 
+\STATE \quad $\textbf{$ps$} \leftarrow  \textsc{get\_payload}(V_l, d_l)$ 
+\STATE \quad $\textbf{$d_r$} \leftarrow  \textsc{rmalloc\_sync}(P, V_r, ps, h, GET)$ 
+
+\STATE \textsc{\textbf{return}} {$\textsc{CHANNEL\_RDMA\_PUT}(P, V_l, V_r, d_l, d_r)$}
+\STATE
+
+% \EndProcedure
+% \Statex
+
+\end{algorithmic}
+\end{algorithm}
+
+
 \end{document}
