@@ -85,13 +85,17 @@ is the algorithm that generates next allocation,
 \STATE \qquad $R_{COUNT} \gets R_{COUNT}-1$
 \STATE \qquad $\textbf{d} \leftarrow  \textsc{find\_next\_allocation}(V, h, sz)$ 
 \STATE \qquad \textbf{if} $\textbf{d} \equiv \textsc{ADDR\_NULL}$ \textbf{then}
-\STATE \qquad \quad \textbf{if} $\textbf{h} \equiv \textsc{NEXT\_FIT}$ \textbf{then}
+\STATE \qquad \quad \textbf{if} $\textbf{h} \equiv \textsc{NEXT\_FIT}$ AND $\textbf{T} \equiv \textsc{PUT}$ \textbf{then}
+\STATE \qquad \qquad $s \gets \textsc{sync\_in\_blocks}(P)$
+\STATE \qquad \quad\textbf{else if} $\textbf{T} \equiv \textsc{PUT}$ \textbf{then}
+\STATE \qquad \qquad $s \gets \textsc{sync\_in\_free\_tags}(P)$
+\STATE \qquad \quad\textbf{else if} $\textbf{h} \equiv \textsc{NEXT\_FIT}$ AND $\textbf{T} \equiv \textsc{GET}$ \textbf{then}
 \STATE \qquad \qquad $s \gets \textsc{sync\_in\_blocks}(P)$
 \STATE \qquad \quad\textbf{else} 
-\STATE \qquad \qquad $s \gets \textsc{sync\_in\_free\_tags}(P)$
+\STATE \qquad \qquad $s \gets \textsc{sync\_in\_alloc\_tags}(P)$
 \STATE \qquad \quad $\textsc{update}(V, s)$
 \STATE \qquad \quad \textsc{break}
-\STATE \qquad \textbf{else if}  $\textbf{h} \neq \textsc{NEXT\_FIT}$ \textbf{then}
+\STATE \qquad \textbf{else if}  $\textbf{h} \neq \textsc{NEXT\_FIT}$ AND $\textbf{T} \equiv \textsc{PUT}$ \textbf{then}
 \STATE \qquad \quad $\textsc{sync\_out\_alloc\_tags}(P, d)$
 \STATE \qquad \textbf{if}  $\textbf{d} \neq \textsc{ADDR\_NULL}$ \textbf{then}
 \STATE \qquad \quad \textsc{break}
@@ -174,15 +178,130 @@ is the algorithm that generates next allocation,
 \STATE \textbf{Output:} A descriptor {$\textbf{d}$} if successful else \textsc{ADDR\_NULL}
 \STATE \textbf{Local:} Let $(P_{b}, V_{b})$ be secondary channel and $R_{\textsc{COUNT}}$ num retries.
 \STATE \textbf{if} $\textsc{alloc\_isLocal}($V$)$ AND $\textsc{sync}($V$) \equiv \textsc{Deferred}$ \textbf{then} 
-\STATE \quad $\textbf{d} \leftarrow  \textsc{find\_next\_allocation}(V, h, sz)$ 
-\STATE \quad \textbf{if}  $\textbf{h} \neq \textsc{NEXT\_FIT}$ \textbf{then}
-\STATE \qquad $\textsc{sync\_out\_alloc\_tags}(P, d)$
-\STATE \quad \textbf{else}
-\STATE \qquad $\textsc{sync\_out\_blocks}(P, d)$
+\STATE \quad \textbf{do}
+\STATE \qquad $\textbf{d} \leftarrow  \textsc{find\_next\_allocation}(V, h, sz)$ 
+\STATE \qquad \textbf{if} $\textbf{d} \equiv \textsc{ADDR\_NULL}$ \textbf{then}
+\STATE \qquad \quad \textbf{if}  $\textbf{h} \neq \textsc{NEXT\_FIT}$ \textbf{then}
+\STATE \qquad \qquad $\textsc{sync\_in\_free\_tags}(P)$
+\STATE \qquad \quad \textbf{else} 
+\STATE \qquad \qquad $\textsc{sync\_in\_free\_blocks}(P)$
+\STATE \quad \textbf{while} ($d \neq \textsc{ADDR\_NULL}$)
+% \STATE \quad \textbf{else}
+% \STATE \qquad $\textsc{sync\_out\_blocks}(P, d)$
 % \STATE \quad $\textsc{update}(V, s)$
 \STATE \textbf{else}
 \STATE \quad $\textbf{d} \leftarrow  \textsc{find\_next\_allocation}(V, h, sz)$ 
 \STATE \textsc{\textbf{return}} {$\textbf{d}$}
+\STATE
+
+% \EndProcedure
+% \Statex
+
+\end{algorithmic}
+\end{algorithm}
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+
+\begin{algorithm}{}
+\footnotesize
+\caption{\textsc{rfree\_sync}{$<PUT>\textsc{(P, V}, d, h)$}}
+\label{alg:rfree_sync_put} 
+\begin{algorithmic}[1]
+
+%------ 
+% \Procedure{$\mathbf{DeleteItem}$}{item $x$}
+
+\STATE \textbf{Input:} Channel $P$, Allocator instance $V$, allocation descriptor $d$, heuristic $h$
+is the algorithm that generates next allocation, 
+\STATE \textbf{Output:} return {$0$} if successful else {$1$}
+\STATE \textbf{Local:} Let $s$ be blocks released by rfree.
+\STATE \textbf{if} $\textsc{alloc\_isLocal}($V$)$ AND $\textsc{sync}($V$) \equiv \textsc{Deferred}$  \textbf{then} 
+\STATE \quad \textbf{if} $\textbf{h} \equiv \textsc{NEXT\_FIT}$  \textbf{then}
+\STATE \qquad $\textbf{s} \leftarrow  \textsc{free\_allocation\_blocks}(V, d)$ 
+\STATE \qquad $\textsc{sync\_out\_blocks}(P, s)$
+\STATE \quad \textbf{else}
+\STATE \qquad $\textsc{free\_allocation}(V, d)$ 
+\STATE \qquad $\textsc{sync\_out\_free\_tags}(P, d)$
+\STATE \textbf{else}
+\STATE \qquad $\textsc{free\_allocation}(V, d)$ 
+\STATE \textsc{\textbf{return}} {$0$}
+\STATE
+
+% \EndProcedure
+% \Statex
+
+\end{algorithmic}
+\end{algorithm}
+
+
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+
+\begin{algorithm}{}
+\footnotesize
+\caption{\textsc{rfree\_sync}{$<GET>\textsc{(P, V}, d, h)$}}
+\label{alg:rfree_sync_GET} 
+\begin{algorithmic}[1]
+
+%------ 
+% \Procedure{$\mathbf{DeleteItem}$}{item $x$}
+
+\STATE \textbf{Input:} Channel $P$, Allocator instance $V$, allocation descriptor $d$, heuristic $h$
+is the algorithm that generates next allocation, 
+\STATE \textbf{Output:} return {$0$} if successful else {$1$}
+\STATE \textbf{Local:} Let $s$ be blocks released by rfree.
+\STATE \textbf{if} $\textsc{alloc\_isLocal}($V$)$ AND $\textsc{sync}($V$) \equiv \textsc{Deferred}$  \textbf{then} 
+\STATE \quad \textbf{if} $\textbf{h} \equiv \textsc{NEXT\_FIT}$  \textbf{then}
+\STATE \qquad $\textbf{s} \leftarrow  \textsc{free\_allocation\_blocks}(V, d)$ 
+\STATE \qquad $\textsc{sync\_out\_blocks}(P, s)$
+\STATE \quad \textbf{else}
+\STATE \qquad $\textsc{sync\_out\_alloc\_tags}(P, d)$
+\STATE \qquad $\textsc{free\_allocation}(V, d)$ 
+\STATE \textbf{else}
+\STATE \qquad \textbf{if} $\textsc{alloc\_isRemote}($V$)$ AND $\textbf{h} \neq \textsc{NEXT\_FIT}$ \textbf{then}
+\STATE \qquad \quad $\textsc{sync\_out\_free\_tags}(P,d)$ // Shadow allocator (active side) should free up 
+\STATE \qquad $\textsc{free\_allocation}(V, d)$ 
+\STATE \textsc{\textbf{return}} {$0$}
+\STATE
+
+% \EndProcedure
+% \Statex
+
+\end{algorithmic}
+\end{algorithm}
+
+
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+
+\begin{algorithm}{}
+\footnotesize
+\caption{\textsc{rread}{$<GET>\textsc{(P, V}, h, d_l)$}}
+\label{alg:rread_GET} 
+\begin{algorithmic}[1]
+
+%------ 
+% \Procedure{$\mathbf{DeleteItem}$}{item $x$}
+
+\STATE \textbf{Input:} Channel $P$, Allocator instance $V$, local allocation descriptor $d_l$,  heuristic $h$ is the algorithm that generates next allocation
+\STATE \textbf{Output:} return {$0$} if RDMA GET was successful else {$1$}
+\STATE \textbf{Local:} Let $d_r$ be a remote allocation descriptor,  $ps$ be payload size, $V_l$ and $V_r$ be local and remote(shadow) allocator instances respectively.
+% \STATE \textbf{if} $\textsc{alloc\_isLocal}($V$)$ AND $\textsc{sync}($V$) \equiv \textsc{Deferred}$  \textbf{then} 
+\STATE \quad $\textbf{$V_l$} \leftarrow  \textsc{get\_local}(P)$ 
+\STATE \quad $\textbf{$V_r$} \leftarrow  \textsc{get\_remote}(P)$ 
+\STATE \quad $\textbf{$ps$} \leftarrow  \textsc{get\_payload}(V_l, d_l)$ 
+\STATE \quad $\textbf{$d_r$} \leftarrow  \textsc{rmalloc\_sync}(P, V_r, ps, h, GET)$ 
+
+\STATE \textsc{\textbf{return}} {$\textsc{CHANNEL\_RDMA\_GET}(P, V_l, V_r, d_l, d_r)$}
 \STATE
 
 % \EndProcedure
