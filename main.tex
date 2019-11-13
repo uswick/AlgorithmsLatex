@@ -92,7 +92,7 @@ is the algorithm that generates next allocation,
 \STATE \qquad \quad $\textsc{update}(V, s)$
 \STATE \qquad \quad \textsc{break}
 \STATE \qquad \textbf{else if}  $\textbf{h} \neq \textsc{NEXT\_FIT}$ \textbf{then}
-\STATE \qquad \quad $\textsc{sync\_out\_alloc\_tags}(P)$
+\STATE \qquad \quad $\textsc{sync\_out\_alloc\_tags}(P, d)$
 \STATE \qquad \textbf{if}  $\textbf{d} \neq \textsc{ADDR\_NULL}$ \textbf{then}
 \STATE \qquad \quad \textsc{break}
 \STATE \quad \textbf{while} ($R_{COUNT} > 0$)
@@ -135,7 +135,7 @@ is the algorithm that generates next allocation,
 is the algorithm that generates next allocation, 
 \STATE \textbf{Output:} A descriptor {$\textbf{d}$} if successful else \textsc{ADDR\_NULL}
 \STATE \textbf{Local:} Let $(P_{b}, V_{b})$ be secondary channel and $R_{\textsc{COUNT}}$ num retries.
-\STATE \textbf{if} $\textsc{alloc\_isLocal}($V$)$ OR $\textbf{h} \equiv \textsc{NEXT\_FIT}$  \textbf{then} 
+\STATE \textbf{if} $\textsc{alloc\_isLocal}($V$)$ AND $\textsc{sync}($V$) \equiv \textsc{None}$ OR $\textbf{h} \equiv \textsc{NEXT\_FIT}$  \textbf{then} 
 \STATE \quad $\textbf{d} \leftarrow  \textsc{find\_next\_allocation}(V, h, sz)$ 
 \STATE \quad $\textsc{update}(V, s)$
 \STATE \textbf{else}
@@ -173,15 +173,15 @@ is the algorithm that generates next allocation,
 is the algorithm that generates next allocation, 
 \STATE \textbf{Output:} A descriptor {$\textbf{d}$} if successful else \textsc{ADDR\_NULL}
 \STATE \textbf{Local:} Let $(P_{b}, V_{b})$ be secondary channel and $R_{\textsc{COUNT}}$ num retries.
-\STATE \textbf{if} $\textsc{alloc\_isLocal}($V$)$ OR $\textbf{h} \equiv \textsc{NEXT\_FIT}$  \textbf{then} 
+\STATE \textbf{if} $\textsc{alloc\_isLocal}($V$)$ AND $\textsc{sync}($V$) \equiv \textsc{Deferred}$ \textbf{then} 
 \STATE \quad $\textbf{d} \leftarrow  \textsc{find\_next\_allocation}(V, h, sz)$ 
-\STATE \quad $\textsc{update}(V, s)$
+\STATE \quad \textbf{if}  $\textbf{h} \neq \textsc{NEXT\_FIT}$ \textbf{then}
+\STATE \qquad $\textsc{sync\_out\_alloc\_tags}(P, d)$
+\STATE \quad \textbf{else}
+\STATE \qquad $\textsc{sync\_out\_blocks}(P, d)$
+% \STATE \quad $\textsc{update}(V, s)$
 \STATE \textbf{else}
-\STATE \quad \textbf{do}
-\STATE \qquad $s \gets \textsc{sync\_in\_alloc\_tags}(P)$
-\STATE \qquad $\textsc{update}(V, s)$
-\STATE \qquad $\textbf{d} \leftarrow  \textsc{find\_next\_allocation}(V, h, sz)$
-\STATE \quad \textbf{while} ($d \neq \textsc{ADDR\_NULL}$)
+\STATE \quad $\textbf{d} \leftarrow  \textsc{find\_next\_allocation}(V, h, sz)$ 
 \STATE \textsc{\textbf{return}} {$\textbf{d}$}
 \STATE
 
