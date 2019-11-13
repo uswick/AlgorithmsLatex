@@ -6,6 +6,7 @@
 \usepackage[ruled,vlined]{algorithm2e}
 \usepackage{algorithm}
 \usepackage{algorithmic}
+
 \include{pythonlisting}
 
 \begin{document}
@@ -301,7 +302,7 @@ is the algorithm that generates next allocation,
 \STATE \quad $\textbf{$ps$} \leftarrow  \textsc{get\_payload}(V_l, d_l)$ 
 \STATE \quad $\textbf{$d_r$} \leftarrow  \textsc{rmalloc\_sync}(P, V_r, ps, h, GET)$ 
 
-\STATE \textsc{\textbf{return}} {$\textsc{CHANNEL\_RDMA\_GET}(P, V_l, V_r, d_l, d_r)$}
+\STATE \textsc{\textbf{return}} {$\textsc{NETWORK\_RDMA\_GET}(P, V_l, V_r, d_l, d_r)$}
 \STATE
 
 % \EndProcedure
@@ -335,7 +336,7 @@ is the algorithm that generates next allocation,
 \STATE \quad $\textbf{$ps$} \leftarrow  \textsc{get\_payload}(V_l, d_l)$ 
 \STATE \quad $\textbf{$d_r$} \leftarrow  \textsc{rmalloc\_sync}(P, V_r, ps, h, GET)$ 
 
-\STATE \textsc{\textbf{return}} {$\textsc{CHANNEL\_RDMA\_PUT}(P, V_l, V_r, d_l, d_r)$}
+\STATE \textsc{\textbf{return}} {$\textsc{NETWORK\_RDMA\_PUT}(P, V_l, V_r, d_l, d_r)$}
 \STATE
 
 % \EndProcedure
@@ -344,5 +345,98 @@ is the algorithm that generates next allocation,
 \end{algorithmic}
 \end{algorithm}
 
+
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+
+\begin{algorithm}{}
+\footnotesize
+\caption{\textsc{Sync\_out\_blocks}{$\textsc{(P}, s)$}}
+\label{alg:Sync_out_blocks} 
+\begin{algorithmic}[1]
+% \Procedure{Graph}{$ \alpha, \beta $}
+
+%------ 
+% \Procedure{$\mathbf{DeleteItem}$}{item $x$}
+\STATE \textbf{Input:} Channel $P$, $s$ is number of blocks released.
+\STATE \textbf{Output:} return {$0$} if Sync out operation was successful else {$1$}
+\STATE \textbf{Local:} Let $ac$ be a pointer to network buffer that accumulates blocks
+% \STATE \textbf{if} $\textsc{alloc\_isLocal}($V$)$ AND $\textsc{sync}($V$) \equiv \textsc{Deferred}$  \textbf{then} 
+\STATE \quad $\textbf{$ac$} \leftarrow  \textsc{get\_network\_sync\_buf}(P)$ 
+\STATE \quad $\textbf{$*ac$} \leftarrow  \textbf{$*ac$} + s$ 
+\STATE \textsc{\textbf{return}} {$\textsc{NETWORK\_SYNC\_OUT}(P)$}
+\STATE
+
+% \EndProcedure
+% \Statex
+
+\end{algorithmic}
+\end{algorithm}
+
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+
+\begin{algorithm}{}
+\footnotesize
+\caption{\textsc{Sync\_in\_blocks}{$\textsc{(P})$}}
+\label{alg:Sync_in_blocks} 
+\begin{algorithmic}[1]
+% \Procedure{Graph}{$ \alpha, \beta $}
+
+%------ 
+% \Procedure{$\mathbf{DeleteItem}$}{item $x$}
+\STATE \textbf{Input:} Channel $P$,
+\STATE \textbf{Output:} return number of blocks retrieved if inbound synchronization operation was successful else {$0$}
+\STATE \textbf{Local:} Let $ac$ be a pointer to network buffer that accumulates blocks, $b_{prev}$, $b_{now}$ indicate number of blocks before and after sync operation
+% \STATE \textbf{if} $\textsc{alloc\_isLocal}($V$)$ AND $\textsc{sync}($V$) \equiv \textsc{Deferred}$  \textbf{then} 
+\STATE \quad $\textbf{$ac$} \leftarrow  \textsc{get\_network\_sync\_buf}(P)$ 
+\STATE \quad $\textbf{$b_{prev}$} \leftarrow  \textsc{get\_blocks}(P, ac)$ 
+\STATE \quad $\textsc{NETWORK\_SYNC\_IN}(P)$ 
+\STATE \quad $\textbf{$b_{now}$} \leftarrow  \textsc{get\_blocks}(P, ac)$ 
+\STATE \textsc{\textbf{return}} {$b_{now} - b_{prev}$}
+\STATE
+
+% \EndProcedure
+% \Statex
+
+\end{algorithmic}
+\end{algorithm}
+
+
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+
+\begin{algorithm}{}
+\footnotesize
+\caption{\textsc{Sync\_out\_blocks}{$\textsc{(P}, s)$}}
+\label{alg:Sync_out_blocks} 
+\begin{algorithmic}[1]
+% \Procedure{Graph}{$ \alpha, \beta $}
+
+%------ 
+% \Procedure{$\mathbf{DeleteItem}$}{item $x$}
+\STATE \textbf{Input:} Channel $P$, $s$ is number of blocks released.
+\STATE \textbf{Output:} return {$0$} if Sync out operation was successful else {$1$}
+\STATE \textbf{Local:} Let $ac$ be a pointer to network buffer that accumulates blocks
+
+\STATE \quad $\textbf{$ac$} \leftarrow  \textsc{get\_network\_sync\_buf}(P)$ 
+\STATE \quad $\textbf{$*ac$} \leftarrow  \textbf{$*ac$} + s$ 
+\STATE \textsc{\textbf{return}} {$\textsc{NETWORK\_SYNC\_OUT}(P)$}
+\STATE
+
+% \EndProcedure
+% \Statex
+
+\end{algorithmic}
+\end{algorithm}
 
 \end{document}
