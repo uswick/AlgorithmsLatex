@@ -352,29 +352,29 @@ is the algorithm that generates next allocation,
 % ------------------------------------------------------------------------------------
 % ------------------------------------------------------------------------------------
 
-\begin{algorithm}{}
-\footnotesize
-\caption{\textsc{Sync\_out\_blocks}{$\textsc{(P}, s)$}}
-\label{alg:Sync_out_blocks} 
-\begin{algorithmic}[1]
-% \Procedure{Graph}{$ \alpha, \beta $}
+% \begin{algorithm}{}
+% \footnotesize
+% \caption{\textsc{Sync\_out\_blocks}{$\textsc{(P}, s)$}}
+% \label{alg:Sync_out_blocks} 
+% \begin{algorithmic}[1]
+% % \Procedure{Graph}{$ \alpha, \beta $}
 
-%------ 
-% \Procedure{$\mathbf{DeleteItem}$}{item $x$}
-\STATE \textbf{Input:} Channel $P$, $s$ is number of blocks released.
-\STATE \textbf{Output:} return {$0$} if Sync out operation was successful else {$1$}
-\STATE \textbf{Local:} Let $ac$ be a pointer to network buffer that accumulates blocks
-% \STATE \textbf{if} $\textsc{alloc\_isLocal}($V$)$ AND $\textsc{sync}($V$) \equiv \textsc{Deferred}$  \textbf{then} 
-\STATE \quad $\textbf{$ac$} \leftarrow  \textsc{get\_network\_sync\_buf}(P)$ 
-\STATE \quad $\textbf{$*ac$} \leftarrow  \textbf{$*ac$} + s$ 
-\STATE \textsc{\textbf{return}} {$\textsc{NETWORK\_SYNC\_OUT}(P)$}
-\STATE
+% %------ 
+% % \Procedure{$\mathbf{DeleteItem}$}{item $x$}
+% \STATE \textbf{Input:} Channel $P$, $s$ is number of blocks released.
+% \STATE \textbf{Output:} return {$0$} if Sync out operation was successful else {$1$}
+% \STATE \textbf{Local:} Let $ac$ be a pointer to network buffer that accumulates blocks
+% % \STATE \textbf{if} $\textsc{alloc\_isLocal}($V$)$ AND $\textsc{sync}($V$) \equiv \textsc{Deferred}$  \textbf{then} 
+% \STATE \quad $\textbf{$ac$} \leftarrow  \textsc{get\_network\_sync\_buf}(P)$ 
+% \STATE \quad $\textbf{$*ac$} \leftarrow  \textbf{$*ac$} + s$ 
+% \STATE \textsc{\textbf{return}} {$\textsc{NETWORK\_SYNC\_OUT}(P)$}
+% \STATE
 
-% \EndProcedure
-% \Statex
+% % \EndProcedure
+% % \Statex
 
-\end{algorithmic}
-\end{algorithm}
+% \end{algorithmic}
+% \end{algorithm}
 
 % ------------------------------------------------------------------------------------
 % ------------------------------------------------------------------------------------
@@ -431,6 +431,118 @@ is the algorithm that generates next allocation,
 \STATE \quad $\textbf{$ac$} \leftarrow  \textsc{get\_network\_sync\_buf}(P)$ 
 \STATE \quad $\textbf{$*ac$} \leftarrow  \textbf{$*ac$} + s$ 
 \STATE \textsc{\textbf{return}} {$\textsc{NETWORK\_SYNC\_OUT}(P)$}
+\STATE
+
+% \EndProcedure
+% \Statex
+
+\end{algorithmic}
+\end{algorithm}
+
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+% produce (data):
+% 	if( buflen() == MAX)
+% 	  while(get_sync_state() != SYNC);
+% 	  mark_st(I)
+% 	  clear()
+% 	  write(data)
+% 	  mark_sync_state(N)
+% 	  mark_st(V)
+% 	else
+% 	  mark_st(I)
+% 	  append(data)
+% 	  mark_st(V)
+
+% ------------------------------------------------------------------------------------
+
+\begin{algorithm}{}
+\footnotesize
+\caption{\textsc{produce\_tags\_nb}{$\textsc{(P}, d, ctx)$}}
+\label{alg:prod_tags} 
+\begin{algorithmic}[1]
+% \Procedure{Graph}{$ \alpha, \beta $}
+
+%------ 
+% \Procedure{$\mathbf{DeleteItem}$}{item $x$}
+\STATE \textbf{Input:} Channel $P$, A rmalloc memory descriptor $d$, sync context $ctx$.
+\STATE \textbf{Output:} return {$0$} if tag was appended to queue else {$1$}
+\STATE \textbf{Local:} Let $Q$ be bounded RDMA queue for tags, $l$ be the size of $Q$ and $t$ be the tag generated from $d$.
+
+\STATE $\textbf{$buf$} \leftarrow  \textsc{get\_network\_sync\_buf}(P, ctx)$ 
+\STATE $\textbf{$t$} \leftarrow  {(d.start, d.end)}$ 
+\STATE $\textbf{$Q$} \leftarrow  \textsc{get\_sync\_queue}(buf)$ 
+\STATE $\textbf{$l$} \leftarrow  \textsc{get\_queue\_len}(buf)$ 
+\STATE \textbf{if} $l \equiv \textsc{MAX\_SYNC\_QSIZE}$  \textbf{then} 
+\STATE \quad \textbf{while}  $\textsc{get\_sync\_state}(ctx) \neq \textsc{SYNC}$
+\STATE \qquad \textsc{\textbf{return}} {$1$}
+\STATE \quad  $\textsc{mark\_tag\_state}(Q, \textsc{INV})$
+\STATE \quad  $\textsc{clear\_queue}(Q)$
+\STATE \quad  $\textsc{insert\_queue}(Q, 0, t)$
+\STATE \quad  $\textsc{mark\_sync\_state}(Q, \textsc{READY})$
+\STATE \quad  $\textsc{mark\_tag\_state}(Q, \textsc{VALID})$
+\STATE \textbf{else}
+\STATE \quad  $\textsc{mark\_tag\_state}(Q, \textsc{INV})$
+\STATE \quad  $\textsc{append\_queue}(Q, t)$
+\STATE \quad  $\textsc{mark\_tag\_state}(Q, \textsc{VALID})$
+\STATE {$\textsc{NETWORK\_SYNC\_OUT}(P, ctx)$}
+\STATE \textsc{\textbf{return}} {$0$}
+\STATE
+
+% \EndProcedure
+% \Statex
+
+\end{algorithmic}
+\end{algorithm}
+
+
+ ------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------
+% consume ():
+% 	do
+% 	  read_from_producer(); // RDMA fetch
+% 	while ( get_st2() == I );
+% 	// valid data
+% 	new_tags = check_diff_and_consume();
+% 	update(new_tags);
+% 	if( bufflen() == MAX )
+% 	  mark_sync_producer(SYNC);
+
+% ------------------------------------------------------------------------------------
+
+\begin{algorithm}{}
+\footnotesize
+\caption{\textsc{consume\_tags\_nb}{$\textsc{(P}, d, ctx)$}}
+\label{alg:cons_tags} 
+\begin{algorithmic}[1]
+% \Procedure{Graph}{$ \alpha, \beta $}
+
+%------ 
+% \Procedure{$\mathbf{DeleteItem}$}{item $x$}
+\STATE \textbf{Input:} Channel $P$, A rmalloc memory descriptor $d$, sync context $ctx$.
+\STATE \textbf{Output:} return {$0$} if new allocation(s) are found to queue else {$1$}
+\STATE \textbf{Local:} Let $Q$ be bounded RDMA queue for inbound tags, $R$ be unbounded queue of allocation descriptors, $s_{state}$ and $t_{state}$ synchronization and tag states, $l$ be the size of $Q$, $T$ be new tag queue and $d$ be the allocation descriptor generated by each tag from $T$, .
+
+\STATE $\textbf{$buf$} \leftarrow  \textsc{get\_network\_sync\_buf}(P, ctx)$ 
+\STATE $\textsc{NETWORK\_SYNC\_IN}(P, ctx)$ 
+\STATE $\textbf{$s_{state}$} \leftarrow  \textsc{get\_sync\_state}(buf)$ 
+\STATE $\textbf{$t_{state}$} \leftarrow  \textsc{get\_tag\_state}(buf)$ 
+\STATE $\textbf{$Q$} \leftarrow  \textsc{get\_sync\_queue}(buf)$
+\STATE $\textbf{$l$} \leftarrow  \textsc{get\_queue\_len}(buf)$ 
+\STATE \textbf{if} $t_{state} \equiv \textsc{INV}$ OR $s_{state} \equiv \textsc{SYNC}$ \textbf{then} 
+\STATE \quad \textsc{\textbf{return}} {$1$}
+\STATE $\textbf{$T$} \leftarrow \textsc{check\_new\_tags}(Q)$
+\STATE $\textbf{$R$} \leftarrow  \textsc{get\_tag\_queue}(ctx)$ 
+\STATE \textbf{for each} $t \in \textsc{T}$
+\STATE \quad $\textbf{$d$} \leftarrow  \textsc{create\_desc}(P, t)$
+\STATE \quad $\textsc{append\_queue}(R, d)$
+\STATE \textbf{if} $l \equiv \textsc{MAX\_SYNC\_QSIZE}$  \textbf{then} 
+\STATE \quad  $\textsc{mark\_sync\_state}(Q, \textsc{SYNC})$
+\STATE \quad  $\textsc{off} \leftarrow \textsc{offset\_sync\_state}(Q, buf)$
+\STATE \quad {$\textsc{NETWORK\_RDMA\_WRITE\_OFFSET}(P, buf, off)$}
+\STATE \textsc{\textbf{return}} {$0$}
 \STATE
 
 % \EndProcedure
